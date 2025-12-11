@@ -56,7 +56,7 @@ async def run_trajectory(run_idx: int, config: GymEvalConfig):
     """Run a single gym evaluation process"""
     db_client = await create_db_client()
 
-    gym_env = gym.make(config.env_id, run_idx=run_idx)
+    gym_env = gym.make(config.env_id, run_idx=run_idx, enable_vision=config.enable_vision)
 
     log_dir = os.path.join(".fle", "trajectory_logs", f"v{config.version}")
 
@@ -185,6 +185,7 @@ async def main(config_path):
             task=task,
             agent_cards=agent_cards,
             env_id=run_config.env_id,
+            enable_vision=run_config.enable_vision,
         )
         # Ensure agent cards are properly set for a2a functionality
         assert config.agent_cards is not None

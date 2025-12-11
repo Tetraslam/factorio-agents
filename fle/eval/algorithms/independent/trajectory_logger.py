@@ -1,3 +1,4 @@
+import base64
 import multiprocessing
 import os
 import time
@@ -5,7 +6,6 @@ from typing import Optional
 
 from fle.agents.gym_agent import GymAgent
 from fle.commons.models.program import Program
-
 from fle.env.gym_env.observation import Observation
 
 
@@ -114,10 +114,31 @@ class TrajectoryLogger:
             with open(obs_file, "w") as f:
                 f.write(formatted_obs)
 
+            # Save map image if vision is enabled
+            if observation.map_image:
+                try:
+                    # Handle both raw base64 and data URL format
+                    image_data = observation.map_image
+                    if image_data.startswith("data:"):
+                        # Strip data URL prefix (e.g., "data:image/png;base64,")
+                        image_data = image_data.split(",", 1)[1]
+                    
+                    image_bytes = base64.b64decode(image_data)
+                    image_file = os.path.join(
+                        self.log_dir, f"agent{agent_idx}_iter{iteration}_map.png"
+                    )
+                    with open(image_file, "wb") as f:
+                        f.write(image_bytes)
+                except Exception as e:
+                    error_msg = str(e).encode('ascii', 'replace').decode('ascii')
+                    print(f"Warning: Failed to save map image: {error_msg}")
+
         raw_text = agent.observation_formatter.format_raw_text(observation.raw_text)
         for line in raw_text.split("\n"):
             if "Error" in line or "Exception" in line:
-                print("raw_text Error:", line)
+                # Sanitize for Windows console
+                safe_line = line.encode('ascii', 'replace').decode('ascii')
+                print("raw_text Error:", safe_line)
 
     def add_iteration_time(self, iteration_time: float):
         """Add an iteration time to the tracking list

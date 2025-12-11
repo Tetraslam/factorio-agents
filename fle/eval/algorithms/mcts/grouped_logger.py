@@ -167,7 +167,7 @@ class GroupedFactorioLogger:
         right_table.add_row(
             "Entities:",
             Text(
-                f"{instance.start_entities} → {instance.final_entities}",
+                f"{instance.start_entities} -> {instance.final_entities}",
                 style="red"
                 if instance.start_entities != instance.final_entities
                 else "cyan",
@@ -176,7 +176,7 @@ class GroupedFactorioLogger:
         right_table.add_row(
             "Inventory:",
             Text(
-                f"{instance.start_inventory_count} → {instance.final_inventory_count}"
+                f"{instance.start_inventory_count} -> {instance.final_inventory_count}"
             ),
         )
         right_table.add_row("Version:", Text(f"v{instance.version}"))

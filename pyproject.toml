@@ -109,6 +109,9 @@ name = "testpypi"
 url = "https://test.pypi.org/legacy/"
 publish-url = "https://test.pypi.org/legacy/"
 
+[tool.uv.sources]
+factorio-learning-environment = { workspace = true }
+
 [dependency-groups]
 # Development tools
 dev = [
@@ -121,6 +124,7 @@ dev = [
     "sphinx",
     "sphinx-rtd-theme",
     "sphinx-autodoc-typehints",
+    "factorio-learning-environment[eval,mcp,psql]",
 ]
 
 # Research/internal evaluation development

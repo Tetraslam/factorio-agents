@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
+import importlib.resources as ir
 import os
 import platform
+import shutil
+import socket
 import subprocess
 import sys
-import socket
-from pathlib import Path
-import shutil
-import yaml
 import zipfile
-import importlib.resources as ir
+from pathlib import Path
+
+import yaml
 from platformdirs import user_state_dir
 
 START_RCON_PORT = 27000
@@ -269,6 +270,56 @@ class ClusterManager:
         pkg_root = ir.files("fle.cluster")
         self.pkg_scenarios_dir = Path(pkg_root / "scenarios")
         self.pkg_config_dir = Path(pkg_root / "config")
+        # Platform info
+        self.os_name = platform.system()
+
+    def _get_client_scenarios_path(self) -> Path:
+        """Get the path to the Factorio client's scenarios folder."""
+        if self.os_name == "Windows":
+            appdata = os.environ.get("APPDATA")
+            if not appdata:
+                appdata = Path.home() / "AppData" / "Roaming"
+            return Path(appdata) / "Factorio" / "scenarios"
+        elif self.os_name == "Darwin":
+            return Path.home() / "Library" / "Application Support" / "factorio" / "scenarios"
+        else:  # Linux
+            return Path.home() / ".factorio" / "scenarios"
+
+    def sync_scenarios_to_client(self, scenario: str = "default_lab_scenario"):
+        """
+        Sync scenario files from the package to the Factorio client folder.
+        This ensures the client and Docker server have identical scenario files,
+        preventing 'mod event handlers not identical' errors when connecting.
+        """
+        client_scenarios_dir = self._get_client_scenarios_path()
+        src_scenario_dir = self.pkg_scenarios_dir / scenario
+        dst_scenario_dir = client_scenarios_dir / scenario
+
+        if not src_scenario_dir.exists():
+            print(f"Warning: Source scenario '{scenario}' not found at {src_scenario_dir}")
+            return False
+
+        # Create parent directory if needed
+        client_scenarios_dir.mkdir(parents=True, exist_ok=True)
+
+        # Remove existing scenario folder to ensure clean sync
+        if dst_scenario_dir.exists():
+            shutil.rmtree(dst_scenario_dir)
+
+        # Copy scenario folder
+        shutil.copytree(src_scenario_dir, dst_scenario_dir)
+
+        # Remove script.dat files from BOTH source and destination
+        # These compiled caches cause event handler mismatches
+        for script_dat in [
+            dst_scenario_dir / "script.dat",
+            src_scenario_dir / "script.dat",
+        ]:
+            if script_dat.exists():
+                script_dat.unlink()
+
+        print(f"Synced scenario '{scenario}' to Factorio client: {dst_scenario_dir}")
+        return True
 
     def _run_compose(self, args):
         cmd = self.compose_cmd.split() + args
@@ -318,6 +369,9 @@ class ClusterManager:
             )
             sys.exit(1)
 
+        # Sync scenario to Factorio client folder for seamless multiplayer connection
+        self.sync_scenarios_to_client(scenario)
+
         self.generate(num_instances, scenario, attach_mod, save_file)
 
         # Path summary
@@ -327,6 +381,7 @@ class ClusterManager:
         print(f"  compose:     {self.compose_path}")
         print(f"  scenarios:   {self.pkg_scenarios_dir}")
         print(f"  config:      {self.pkg_config_dir}")
+        print(f"  client_scenarios: {self._get_client_scenarios_path()}")
 
         print(
             f"Starting {num_instances} Factorio instance(s) with scenario {scenario}..."
@@ -334,6 +389,9 @@ class ClusterManager:
         self._run_compose(["-f", str(self.compose_path), "up", "-d"])
         print(
             f"Factorio cluster started with {num_instances} instance(s) using scenario {scenario}"
+        )
+        print(
+            "\nTo spectate: Open Factorio -> Multiplayer -> Connect to Address -> localhost:34197"
         )
 
     def stop(self):
@@ -401,4 +459,5 @@ def stop_cluster():
 
 def restart_cluster():
     manager = ClusterManager()
+    manager.restart()
     manager.restart()

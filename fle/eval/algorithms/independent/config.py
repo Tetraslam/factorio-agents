@@ -15,6 +15,7 @@ class GymRunConfig:
     model: str
     version: Optional[int] = None
     observation_formatter: Optional[BasicObservationFormatter] = None
+    enable_vision: bool = False  # Enable visual observations (base64 map images)
 
 
 @dataclass
@@ -27,6 +28,7 @@ class GymEvalConfig:
     task: Optional[TaskABC] = None
     agent_cards: Optional[List[AgentCard]] = None
     env_id: Optional[str] = None  # Gym environment ID for registry-based creation
+    enable_vision: bool = False  # Enable visual observations
 
     def __post_init__(self):
         if self.task is None and hasattr(self.agents[0], "task"):

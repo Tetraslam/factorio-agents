@@ -434,8 +434,8 @@ class BasicObservationFormatter:
                 research_str += "\n"
             research_str += "#### Technologies\n"
             for name, tech in techs.items():
-                status = "✅" if tech.get("researched") else "⏳"
-                enabled = "🔓" if tech.get("enabled") else "🔒"
+                status = "[DONE]" if tech.get("researched") else "[...]"
+                enabled = "[UNLOCKED]" if tech.get("enabled") else "[LOCKED]"
                 research_str += (
                     f"- {status} {enabled} {name} (Level {tech.get('level', 0)})\n"
                 )
@@ -486,7 +486,7 @@ class BasicObservationFormatter:
         if not task:
             return ""
 
-        status = "✅ SUCCESS" if task["success"] else "⏳ IN PROGRESS"
+        status = "[SUCCESS]" if task["success"] else "[IN PROGRESS]"
         task_str = f"### Task Status\n{status}\n"
 
         if task.get("message"):

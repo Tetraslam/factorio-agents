@@ -303,7 +303,9 @@ class GymTrajectoryRunner:
                         return
 
             except Exception as e:
+                # Sanitize error message for Windows console (replace non-ASCII chars)
+                error_msg = str(e).encode('ascii', 'replace').decode('ascii')
                 print(
-                    f"Error in trajectory runner iteration {agent_steps[agent_idx]}: {e}"
+                    f"Error in trajectory runner iteration {agent_steps[agent_idx]}: {error_msg}"
                 )
                 continue
